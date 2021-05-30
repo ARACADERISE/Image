@@ -1,0 +1,63 @@
+use std::{
+  fs::{
+    File,
+    OpenOptions
+  },
+  io::{
+    Read,
+    Write
+  },
+  convert::TryInto
+};
+
+fn read_file(filename: &str) -> Vec<u8> {
+  let mut file = File::open(filename).expect("Unable to open");
+  let mut data = Vec::new();
+  file.read_to_end(&mut data).expect("Unable to read");
+  return data;
+}
+
+fn encode_image(msg: &str) {
+  let image: Vec<u8> = read_file("images/image.bmp");
+  let mut output = image;
+  let msg_string = msg.to_string();
+  let len = msg_string.len();
+  let msg_bytes = msg_string.as_bytes();
+  let mut i: usize = 0;
+  /*
+    My plan is to get the code working with a bmp first,
+    then get the png/bmp conversion working
+  */
+  File::create("images/out.bmp").expect("Unable to create"); // Create a BMP, empties the file if it already exists
+  let mut output_file = OpenOptions::new()
+    .write(true)
+    .append(true)
+    .open("images/out.bmp")
+    .unwrap();
+
+  std::mem::replace(&mut output[420],len.try_into().unwrap()); // I have a child's sense of humor
+  while i < len {
+    std::mem::replace(&mut output[421+i],msg_bytes[i]);
+    i += 1;
+  }
+
+  for byte in output {
+    output_file.write(&[byte]).expect("Unable to write"); // Append bytes to the BMP
+  }
+}
+
+fn decode_image() -> String {
+  let image: Vec<u8> = read_file("images/out.bmp");
+  let mut msg: String = "".to_string();
+  let mut i: usize = 0;
+  while i < image[420].try_into().unwrap() {
+    msg.push(image[421+i] as char);
+    i += 1;
+  }
+  return msg;
+}
+
+fn main() {
+  encode_image("Hello,\nworld!");
+  println!("{}",decode_image())
+}
